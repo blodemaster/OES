@@ -10,8 +10,8 @@
     <body>
         <script type="text/javascript">
    
-            var w = 500;
-            var h = 300;
+            var w = 800;
+            var h = 600;
             var projection = d3.geo.albersUsa()
                        .translate([w/2, h/2])
                        .scale([800]);
@@ -22,7 +22,7 @@
             
             d3.json("us-states.json", function(error, json) {
                 var states = svg.selectAll("path")
-                    .data(json.features)                    
+                    .data(json.features)
                     .enter()
                     .append("path")
                     .attr("d", path)
@@ -30,9 +30,8 @@
                     .attr("stroke", "white")
                     .style("fill", "steelblue")
 
-            var g = svg.append("g")
-            
-             g.selectAll("text")
+                var g = svg.append("g")
+                g.selectAll("text")
                 .data(json.features)
                 .enter()
                 .append("svg:text")
@@ -49,40 +48,45 @@
                 .attr('font-size','5pt')
                 .attr('fill', 'white')
 
+            d3.csv("./project_data/2015_R.csv", function(error, csvdata){
+                if (error) {
+                 return console.log(error);
+                } else {
+                    var value_range = [];
+                    var values = [];
+                    for (var i=0; i<csvdata.length;i++){
+                        if (csvdata[i].OCC_GROUP == "total") {
+                            var name = csvdata[i].STATE;
+                            var value = csvdata[i].A_MEAN;
+                            values[name] = value;
+                            value_range.push(value);
+                        }
+                    }
 
-            d3.csv("2015AllOccupations.csv", function(csvdata){     
-                var values = [];
-                for (var i=0; i<csvdata.states.length;i++){
-                    console.log(csvdata[i]);
-                    var name = csvdata[i].STATE;
-                    console.log(name);
-                    var value = csvdata[i].A_MEAN;
-                    values[name] = value;                 
-                }
+                    var maxvalue = d3.max(value_range);
+                    var minvalue = d3.min(value_range);
 
-            var maxvalue = 60000;
-            var minvalue = 0;
+                    var linear = d3.scale.linear()
+                            .domain([minvalue, maxvalue])
+                            .range([0, 1]);
 
-            var linear = d3.scale.linear()
-                        .domain([minvalue, maxvalue])
-                        .range([0, 1]);
 
             var a = d3.rgb(0,255,255);  //浅蓝色
             var b = d3.rgb(0,0,255);    //蓝色
-         
+
             var computeColor = d3.interpolate(a,b);
-   
+
             //设定各省份的填充色
-            states.style("fill", function(d,i){
-                var t = linear(values[d[1]]);
+            states.style("fill", function(d) {
+                var t = linear(values[d.properties.name]);
                 var color = computeColor(t);
-                return color.toString();            
-            }); 
+                console.log(color.toString());
+                return color.toString();
 
         });
 
+    }});
 });
-
         </script>
     </body>
 </html>

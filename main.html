@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Visualization in OES</title>
+    <script type="text/javascript"
+            src="http://d3js.org/d3.v3.min.js">
+    </script>
+    <style type="text/css">
+        path:hover{
+            fill-opacity: .7;
+        }
+        #tooltip {
+            position: absolute;
+            width: 100px;
+            height: auto;
+            padding: 10px;
+            background-color: white;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        #tooltip.hidden {
+            display:none;
+        }
+        #tooltip p {
+            margin: 0;
+            font-family: sans-serif;
+            font-size:8px;
+            line-height: 20px;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" class="hidden">
+    <p><span id="content"></span></p>
+
+</div>
+
+<script type="text/javascript">
+    d3.json("us-states.json", function(error, json) {
+
+        var years = ["2010", "2011", "2012", "2013", "2014", "2015"];
+        var categories = ["Management Occupations",
+            "Business and Financial Operations Occupations",
+            "Computer and Mathematical Occupations",
+            "Architecture and Engineering Occupations",
+            "Life, Physical, and Social Science Occupations",
+            "Community and Social Service Occupations",
+            "Legal Occupations",
+            "Education, Training, and Library Occupations",
+            "Arts, Design, Entertainment, Sports, and Media Occupations",
+            "Healthcare Practitioners and Technical Occupations",
+            "Healthcare Support Occupations",
+            "Protective Service Occupations",
+            "Food Preparation and Serving Related Occupations",
+            "Building and Grounds Cleaning and Maintenance Occupations",
+            "Personal Care and Service Occupations",
+            "Sales and Related Occupations",
+            "Office and Administrative Support Occupations",
+            "Farming, Fishing, and Forestry Occupations",
+            "Construction and Extraction Occupations",
+            "Installation, Maintenance, and Repair Occupations",
+            "Production Occupations",
+            "Transportation and Material Moving Occupations"
+        ];
+
+        var measurements = ["salary", "employment"];
+
+        d3.json("./project_data/result.json", function(e, resultdata) {
+            if (e) {
+                console.log(e)
+            } else {
+
+                var year_select =d3.select("body")
+                        .append("select")
+                        .attr("class", "select1")
+                        .style("margin-top", "20px");
+
+                var group_select = d3.select("body")
+                        .append("select")
+                        .attr("class", "select2")
+                        .style("margin-left", "20px");
+
+                var occupation_select = d3.select("body")
+                        .append("select")
+                        .attr('class', "select3")
+                        .style("margin-left", "20px")
+                        .style("width", "auto");
+
+                var measurment_select = d3.select("body")
+                        .append("select")
+                        .attr("class", "select4")
+                        .style("margin-left", "20px");
+
+                var button = d3.select('body')
+                        .append("button")
+                        .attr("class", "showmap")
+                        .style("margin-left", "20px")
+                        .text("show map");
+
+                year_select.selectAll("option")
+                        .data(years).enter().append("option")
+                        .text(function(d) {return d;});
+
+                group_select.selectAll("option")
+                        .data(categories).enter()
+                        .append("option").text(function(d) {return d;});
+
+                measurment_select.selectAll("option")
+                        .data(measurements).enter()
+                        .append("option").text(function(d) {return d;});
+
+                occupation_select.selectAll("option")
+                        .data(resultdata["Management Occupations"])
+                        .enter()
+                        .append("option")
+                        .text(function(d) {return d;});
+
+                year_select.on("change", onchange1);
+                group_select.on("change", onchange2);
+                occupation_select.on("change", onchange3);
+                measurment_select.on("change", onchange4);
+
+
+                function onchange1() {
+                    var year = d3.select('.select1').property("value");
+                    return year;
+                }
+
+                function onchange2() {
+                    var group= d3.select(".select2").property("value");
+                    occupation_select.selectAll("option").remove();
+                    occupation_select.selectAll("option")
+                            .data(resultdata[group])
+                            .enter()
+                            .append("option")
+                            .text(function(d) {return d;});
+                }
+
+
+                function onchange3() {
+                    var occupation = d3.select(".select3").property("value");
+                    return occupation;
+                }
+
+                function onchange4() {
+                    var measurement = d3.select(".select4").property("value");
+                    return measurement;
+                }
+
+                var w = 700;
+                var h = 450;
+                var projection = d3.geo.albersUsa()
+                        .translate([w/2, h/2])
+                        .scale([800]);
+                var path = d3.geo.path().projection(projection);
+                var svg = d3.select("body").append("svg")
+                        .attr("width", w)
+                        .attr("height", h);
+
+                var states = svg.selectAll("path")
+                        .data(json.features)
+                        .enter()
+                        .append("path")
+                        .attr("d", path)
+                        .attr("class","states")
+                        .attr("stroke", "white")
+                        .style("fill", "steelblue");
+
+                d3.tsv("https://s3-us-west-2.amazonaws.com/vida-public/geo/us-state-names.tsv", function(error, names) {
+                    var names_abbrev = {};
+                    for (var i=0; i< names.length; i++) {
+
+                        names_abbrev[names[i].name] = names[i].code;
+                    }
+
+                    var g = svg.append("g");
+                    g.selectAll("text")
+                            .data(json.features)
+                            .enter()
+                            .append("svg:text")
+                            .text(function(d){
+                                return names_abbrev[d.properties.name];
+                            })
+                            .attr("x", function(d){
+                                return path.centroid(d)[0];
+                            })
+                            .attr("y", function(d){
+                                return  path.centroid(d)[1];
+                            })
+                            .attr("text-anchor","middle")
+                            .attr('font-size','5pt')
+                            .attr('fill', 'black')
+                            .attr("font-style", "bold");
+
+                    button.on("click", clickchange);
+
+                    function clickchange() {
+
+                        var year = onchange1();
+                        var job=onchange3();
+                        var measurement = onchange4();
+
+                        d3.csv("./project_data/overall.csv", function(error, csvdata){
+                            if (error) {
+                                return console.log(error);
+                            } else {
+                                var value_range = [];
+                                var salaries = {};
+                                var employments = {};
+                                var jobs_1000 = {};
+
+                                for (var i=0; i<csvdata.length;i++){
+                                    if (csvdata[i]["OCC_TITLE"] == job) {
+
+                                        var name = csvdata[i].STATE;
+                                        var salary_no = csvdata[i]["A_MEAN_"+year];
+                                        var employment_no = csvdata[i]["TOT_EMP_" + year];
+                                        var job_1000 = csvdata[i]["JOBS_1000_" + year];
+
+                                        salaries[name] = salary_no;
+                                        employments[name] = employment_no;
+                                        jobs_1000[name] = job_1000;
+
+                                    if (measurement == "salary") {
+                                        value_range.push(+salary_no);
+                                    }  else if (measurement == "employment") {
+                                        value_range.push(+employment_no);
+                                    }
+                                    }
+                                }
+                                console.log(value_range)
+                                var maxvalue = d3.max(value_range);
+                                var minvalue = d3.min(value_range);
+                                console.log(minvalue);
+                                console.log(maxvalue);
+
+                                var linear = d3.scale.linear()
+                                        .domain([minvalue, maxvalue])
+                                        .range([0, 1]);
+
+
+                                var a = d3.rgb(0,255,0);
+                                var b = d3.rgb(255,255,0);
+
+                                var computeColor = d3.interpolate(a,b);
+
+                                if (measurement == "salary") {
+                                    states.style("fill", function(d) {
+                                        var t = linear(salaries[d.properties.name]);
+                                        var color = computeColor(t);
+                                        return color.toString();
+                                    });
+                                } else if (measurement == "employment") {
+                                    states.style("fill", function(d) {
+                                        var t = linear(employments[d.properties.name]);
+                                        var color = computeColor(t);
+                                        return color.toString();
+
+                                    });
+                                }
+                                svg.select("defs").remove();
+                                svg.selectAll(".textvalue").remove();
+                                svg.select("rect").remove();
+                                var defs = svg.append("defs");
+
+                                var linearGradient = defs.append("linearGradient")
+                                        .attr("id","linearColor")
+                                        .attr("x1","0%")
+                                        .attr("y1","0%")
+                                        .attr("x2","100%")
+                                        .attr("y2","0%");
+
+                                var stop1 = linearGradient.append("stop")
+                                        .attr("offset","0%")
+                                        .style("stop-color",a.toString());
+
+                                var stop2 = linearGradient.append("stop")
+                                        .attr("offset","100%")
+                                        .style("stop-color",b.toString());
+
+                                var colorRect = svg.append("rect")
+                                        .attr("x", 35)
+                                        .attr("y", 435)
+                                        .attr("width", 140)
+                                        .attr("height", 10)
+                                        .style("fill","url(#" + linearGradient.attr("id") + ")");
+
+                                var minValueText = svg.append("text")
+                                        .attr("class","valueText")
+                                        .attr("x", 20)
+                                        .attr("y", 435)
+                                        .attr("dy", "-0.3em")
+                                        .attr("class", "textvalue")
+                                        .text(function(){
+                                            return minvalue;
+                                        });
+
+                                var maxValueText = svg.append("text")
+                                        .attr("class","valueText")
+                                        .attr("x", 150)
+                                        .attr("y", 435)
+                                        .attr("dy", "-0.3em")
+                                        .attr("class", "textvalue")
+                                        .text(function() {
+                                            return maxvalue;
+                                        });
+
+                                states.on("mouseover", function(d) {
+                                    var xPosition = path.centroid(d)[0];
+                                    var yPosition= path.centroid(d)[1];
+                                    var content = d.properties.name + "\n"+"Annual average wage: $" +
+                                                    salaries[d.properties.name] + "\n"+ "Employment: " +
+                                                    employments[d.properties.name] + "\n"+ "Employment per 1000: " +
+                                                    jobs_1000[d.properties.name];
+//                                    if (measurement == "salary") {
+//                                        var content = d.properties.name + "\n" + salaries[d.properties.name];
+//                                    } else if (measurement=="employment") {
+//                                        var content = d.properties.name + "\n" + employments[d.properties.name];
+//                                    }
+
+                                    d3.select("#tooltip")
+                                            .style("left", xPosition+"px")
+                                            .style("top", yPosition+"px")
+                                            .select("#content")
+                                            .text(content)
+                                    ;
+                                    console.log(d.properties.name);
+                                    d3.select("#tooltip").classed("hidden", false);
+                                })
+                                        .on("mouseout", function() {
+                                            d3.select("#tooltip").classed("hidden", true);
+                                        })
+                            }});
+                    }
+                })
+            }
+        })
+});
+</script>
+</body>
+</html>

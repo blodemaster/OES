@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script type="text/javascript"
+                src="http://d3js.org/d3.v3.min.js">
+        </script>
+        <style type="text/css">
+            path:hover{
+                fill-opacity: .7;
+            }
+        </style>
+    </head>
+
+    <body>
+        <script type="text/javascript">  
+           var margin = {top: 20, right: 20, bottom: 30, left: 50},
+            width = 400 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
+
+            var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                    
+            var data = {};
+            var yearArray = new Array;
+            var salaryArray = new Array;
+            
+            d3.csv("salaryLineGraph.csv", function(error, csvdata){
+                if (error) {
+                 return console.log(error);
+                } else {
+            
+                    for (var i=0; i<csvdata.length;i++){
+                        if (csvdata[i].STATE == "Alabama") {
+                            var salary2010 = csvdata[i].A_MEAN2010;
+                            var salary2011 = csvdata[i].A_MEAN2011;
+                            var salary2012 = csvdata[i].A_MEAN2012;
+                            var salary2013 = csvdata[i].A_MEAN2013;
+                            var salary2014 = csvdata[i].A_MEAN2014;
+                            var salary2015 = csvdata[i].A_MEAN2015;
+                            console.log(salary2013);
+                            yearArray = ["2010", "2011","2012","2013","2014","2015"];
+                            salaryArray = [salary2010,salary2011,salary2012,salary2013,salary2014,salary2015];
+                            data.year=yearArray;
+                            data.salary=salaryArray;
+                        }
+                    }
+                    console.log(data.year[1]);
+                        }
+                    console.log(data.salary);
+                   
+                    console.log(d3.min(data.salary));
+        })
+        
+            var xScale = d3.scale.linear()
+                      .domain(yearArray)
+                      .range([0, width]);
+
+            var yScale = d3.scale.linear()
+                .domain([30,50])
+                .range([height, 0]);
+
+            var xAxis = d3.svg.axis()
+            .scale(xScale)
+            .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .orient("left");
+
+            svg.append('g')
+                .attr('class', 'x axis')
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(xAxis)
+                .append('text')
+                .text('Year')
+                .attr('transform', 'translate(' + width + ', 0)');
+ 
+            svg.append('g')
+                .attr('class', 'y axis')
+                .call(yAxis)
+                .append('text')
+                .text('Salary');
+
+            var line = d3.svg.line()
+                .x(function(d){return xScale(d.year)})
+                .y(function(d){return yScale(d.salary)})
+                .interpolate('monotone');
+
+            var path = svg.append('path')
+                .attr('class', 'line')
+                .attr('d', line(data));
+
+        </script>
+    </body>
+</html>

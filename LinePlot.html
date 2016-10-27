@@ -9,6 +9,17 @@
         path:hover{
             fill-opacity: .7;
         }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: sans-serif;
+            font-size: 11px;
+        }
     </style>
 </head>
 
@@ -88,6 +99,7 @@
                     .attr('class', 'axis')
                     .attr('transform', 'translate(0,' + height + ')')
                     .call(xAxis)
+//                    .attr('shape-rendering', 'crispEdges')
                     .append('text')
                     .text('Year')
                     .attr('transform', 'translate(' + width + ', 0)');
@@ -104,6 +116,14 @@
                     .attr('d', line(data))
                     .attr("stroke", "#f66")
                     .attr("fill","none");
+
+            g.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {return xScale(d.x);})
+                    .attr("cy", function(d) {return yScale(d.y);})
+                    .attr("r", 2);
 
         }
     });

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script type="text/javascript"
+            src="http://d3js.org/d3.v3.min.js">
+    </script>
+    <style type="text/css">
+        path:hover{
+            fill-opacity: .7;
+        }
+    </style>
+</head>
+
+<body>
+<script type="text/javascript">
+    var s = d3.select('body').append("svg")
+            .attr("width",width)
+            .attr("height","200");
+
+    var height = 120;
+    var width=200;
+
+
+    var svg=d3.select("svg"),
+            margin = {top: 20, right: 20, bottom: 30, left: 50},
+
+            height = +svg.attr("height") - margin.top - margin.bottom;
+    g =svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    //    var svg = d3.select("svg")
+    //            .attr("width", width)
+    //            .attr("height", height)
+    //            .append("g")
+    //            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var data = [];
+    var yearArray = new Array;
+    var salaryArray = new Array;
+
+    d3.csv("salaryLineGraph.csv", function(error, csvdata){
+        if (error) {
+            return console.log(error);
+        } else {
+
+            for (var i=0; i<csvdata.length;i++){
+                if (csvdata[i].STATE == "Alabama") {
+                    var salary2010 = +csvdata[i].A_MEAN2010;
+                    var salary2011 = +csvdata[i].A_MEAN2011;
+                    var salary2012 = +csvdata[i].A_MEAN2012;
+                    var salary2013 = +csvdata[i].A_MEAN2013;
+                    var salary2014 = +csvdata[i].A_MEAN2014;
+                    var salary2015 = +csvdata[i].A_MEAN2015;
+                    yearArray = ["2010", "2011","2012","2013","2014","2015"];
+                    salaryArray = [salary2010,salary2011,salary2012,salary2013,salary2014,salary2015];
+                    for (var i=0; i <yearArray.length; i++) {
+                        temp = {};
+                        temp["x"]=yearArray[i];
+                        temp["y"] =salaryArray[i];
+                        data.push(temp)
+                    }
+                }
+            }
+            console.log(data);
+
+            var xScale = d3.scale.ordinal()
+                    .domain(data.map(function(d){return(d.x);}))
+                    .range([0,40,80,120,160,200]);
+            console.log(d3.min(salaryArray));
+
+            var yScale = d3.scale.linear()
+                    .domain([d3.min(salaryArray)*0.9,d3.max(salaryArray)*1.1])
+                    .range([height, 0]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+            var line = d3.svg.line()
+                    .x(function(d){return xScale(d.x)})
+                    .y(function(d){return yScale(d.y)});
+
+
+            g.append('g')
+                    .attr('class', 'axis')
+                    .attr('transform', 'translate(0,' + height + ')')
+                    .call(xAxis)
+                    .append('text')
+                    .text('Year')
+                    .attr('transform', 'translate(' + width + ', 0)');
+
+            g.append('g')
+                    .attr('class', 'axis')
+                    .call(yAxis)
+                    .append('text')
+                    .text('Salary');
+
+
+            g.append('path')
+                    .attr('class', 'line')
+                    .attr('d', line(data))
+                    .attr("stroke", "#f66")
+                    .attr("fill","none");
+
+        }
+    });
+
+
+</script>
+</body>
+</html>

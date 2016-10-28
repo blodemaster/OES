@@ -161,9 +161,7 @@
             if (dataset[4].y == 0) {
                 dataset.pop();
             }
-            if (dataset[4].y == NaN) {
-                dataset.pop();
-            }
+
             var xScale = d3.scale.linear()
                     .domain([0,100])
                     .range([0,(width-40)]);

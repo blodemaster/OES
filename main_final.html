@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Visualization in OES</title>
+    <script type="text/javascript"
+            src="http://d3js.org/d3.v3.min.js">
+    </script>
+    <style type="text/css">
+        path:hover{
+            fill-opacity: .6;
+        }
+        #tooltip {
+            position: absolute;
+            width: 100px;
+            height: auto;
+            padding: 10px;
+            background-color: white;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        #tooltip.hidden {
+            display:none;
+        }
+        #tooltip p {
+            margin: 0;
+            font-family: sans-serif;
+            font-size:9px;
+            line-height: 20px;
+            color: black;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: sans-serif;
+            font-size: 8px;
+            fill: #000000;
+        }
+        .MyText {
+            font-size: small;
+            fill: black;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" class="hidden">
+    <p><span id="content"></span></p>
+
+</div>
+
+<script type="text/javascript">
+    d3.json("us-states.json", function(error, json) {
+
+        var years = ["2010", "2011", "2012", "2013", "2014", "2015"];
+        var categories = ["Management Occupations",
+            "Business and Financial Operations Occupations",
+            "Computer and Mathematical Occupations",
+            "Architecture and Engineering Occupations",
+            "Life, Physical, and Social Science Occupations",
+            "Community and Social Service Occupations",
+            "Legal Occupations",
+            "Education, Training, and Library Occupations",
+            "Arts, Design, Entertainment, Sports, and Media Occupations",
+            "Healthcare Practitioners and Technical Occupations",
+            "Healthcare Support Occupations",
+            "Protective Service Occupations",
+            "Food Preparation and Serving Related Occupations",
+            "Building and Grounds Cleaning and Maintenance Occupations",
+            "Personal Care and Service Occupations",
+            "Sales and Related Occupations",
+            "Office and Administrative Support Occupations",
+            "Farming, Fishing, and Forestry Occupations",
+            "Construction and Extraction Occupations",
+            "Installation, Maintenance, and Repair Occupations",
+            "Production Occupations",
+            "Transportation and Material Moving Occupations"
+        ];
+
+        var measurements = ["salary", "employment"];
+
+        var margin = {top: 20, right: 20, bottom: 30, left: 50};
+        var width = 350 - margin.left -margin.right;
+        var height = 300 - margin.top - margin.bottom;
+
+        var job = "Legislators";
+        var state = "Alabama";
+        var year = 2015;
+
+        var yearArray = ["2015", "2014", "2013", "2012","2011", "2010"];
+        var percentile = [10, 25, 50, 75, 90];
+
+
+        var generate_year_plot = function(dataset) {
+            var xScale = d3.scale.ordinal()
+                    .domain(dataset.map(function(d){return(d.x);}))
+                    .range([0,55,110,165,220,275]);
+
+            var yScale = d3.scale.linear()
+                    .domain([d3.min(dataset.map(function(d) {return d.y}))*0.9, d3.max(dataset.map(function(d) {return d.y}))*1.1])
+                    .range([height, 0]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+            var line = d3.svg.line()
+                    .x(function(d){return xScale(d.x)})
+                    .y(function(d){return yScale(d.y)});
+
+            var chart = d3.select("body")
+                    .append("svg")
+                    .attr("width", width+margin.left+margin.right)
+                    .attr("height", height+margin.top + margin.bottom)
+                    .attr("class", "lineGraph")
+                    .append("g")
+                    .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+            chart.append('g')
+                    .attr('class', 'axis')
+                    .attr('transform', 'translate(0,' + height + ')')
+                    .call(xAxis)
+                    .append('text')
+                    .text('Year')
+                    .attr('transform', 'translate(' + width + ', 0)');
+
+            chart.append('g')
+                    .attr('class', 'axis')
+                    .call(yAxis)
+                    .append('text')
+                    .text('Salary');
+
+            chart.append('path')
+                    .attr('class', 'line')
+                    .attr('d', line(dataset))
+                    .attr("stroke", "#f66")
+                    .attr("fill","none");
+
+            chart.selectAll("circle")
+                    .data(dataset)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {return xScale(d.x);})
+                    .attr("cy", function(d) {return yScale(d.y);})
+                    .attr("r", 2);
+        };
+
+        var generate_percentile=function(dataset) {
+            if (dataset[4].y == 0) {
+                dataset.pop();
+            }
+            if (dataset[4].y == NaN) {
+                dataset.pop();
+            }
+            var xScale = d3.scale.linear()
+                    .domain([0,100])
+                    .range([0,(width-40)]);
+
+            var yScale = d3.scale.linear()
+                    .domain([d3.min(dataset.map(function(d) {return d.y}))*0.8, d3.max(dataset.map(function(d) {return d.y}))*1.2])
+                    //                    .domain(d3.extent(dataset.map(function(d) {return d.y})))
+                    .range([height, 0]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+            var line = d3.svg.line()
+                    .x(function(d){return xScale(d.x)})
+                    .y(function(d){return yScale(d.y)});
+
+            var chart = d3.select("body")
+                    .append("svg")
+                    .attr("width", width+margin.left+margin.right)
+                    .attr("height", height+margin.top + margin.bottom)
+                    .attr("class", "lineGraph")
+                    .append("g")
+                    .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+            chart.append('g')
+                    .attr('class', 'axis')
+                    .attr('transform', 'translate(0,' + height + ')')
+                    .call(xAxis)
+                    .append('text')
+                    .text('%percentile')
+                    .attr('transform', 'translate(' + (width-38) + ', 0)');
+
+            chart.append('g')
+                    .attr('class', 'axis')
+                    .call(yAxis)
+                    .append('text')
+                    .text('Salary');
+
+            chart.append('path')
+                    .attr('class', 'line')
+                    .attr('d', line(dataset))
+                    .attr("stroke", "#f66")
+                    .attr("fill","none");
+
+            chart.selectAll("circle")
+                    .data(dataset)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {return xScale(d.x);})
+                    .attr("cy", function(d) {return yScale(d.y);})
+                    .attr("r", 2);
+        };
+
+        function  capital_letter(str) {
+            var array = str.split(" ");
+            var string = "";
+            array.pop();
+            for (var i = 0; i < array.length; i++){
+                if (array[i][0] == array[i][0].toUpperCase()){
+                    string = string + array[i][0]
+                }
+            }
+            string = string.substr(0,3);
+            return string;
+        }
+
+        var generate_barChart = function(data, label) {
+            var width = 550;
+            var height = 300;
+            var padding = {left:50, right:30, top:20, bottom:20};
+
+            var fullnames = [];
+            var names = [];
+            var dataset = [];
+
+            for (var i=0; i<data.length; i++) {
+                fullnames.push(data[i][0]);
+                names.push(capital_letter(data[i][0]));
+                dataset.push(+data[i][1]);
+            }
+
+            var svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .attr("class", "barChart");
+
+            var xScale = d3.scale.ordinal()
+                    .domain(names)
+                    .rangeRoundBands([0, width - padding.left - padding.right],0, 0);
+            var yScale = d3.scale.linear()
+                    .domain([0,d3.max(dataset)])
+                    .range([height - padding.top - padding.bottom, 0]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+            var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+            var rectPadding = 8;
+            var rects = svg.selectAll("rect")
+                    .data(dataset)
+                    .enter()
+                    .append("rect")
+                    //.attr("class","MyRect")
+                    .attr("transform","translate(" + padding.left + "," + padding.top + ")")
+                    .attr("x", function(d,i){
+                        return xScale(names[i]) + rectPadding/2;
+                    } )
+                    .attr("y",function(d){
+                        return yScale(d);
+                    })
+                    .attr("width", xScale.rangeBand() - rectPadding )
+                    .attr("height", function(d){
+                        return height - padding.top - padding.bottom - yScale(d);
+                    })
+                    .attr("fill", "steelblue")
+                    .on("mouseover", function () {
+                        d3.select(this)
+                                .attr("fill", "orange");
+                    })
+                    .on("mouseout", function(){
+                        d3.select(this)
+                                .attr("fill", "steelblue");
+                    })
+                    .append("title")
+                    .text(function (d, i) {
+                        return fullnames[i] + " :  "+ d;
+                    });
+            svg.append("g")
+                    .attr("class","axis")
+                    .attr("transform","translate(" + padding.left + "," + (height - padding.bottom) + ")")
+                    .call(xAxis);
+
+            svg.append("g")
+                    .attr("class","axis")
+                    .attr("transform","translate(" + padding.left + "," + padding.top + ")")
+                    .call(yAxis)
+                    .append("text")
+                    .text(label)
+                    //                    .attr("transform", "rotate(-90)")
+                    .attr("transform", "translate(" + 40 +", -20)")
+                    .attr("y", 16)
+                    .attr("dy", "1em")
+                    .attr("text-anchor", "end");
+        };
+
+        d3.json("./project_data/result.json", function(e, resultdata) {
+            if (e) {
+                console.log(e)
+            } else {
+
+                var year_select =d3.select("body")
+                        .append("select")
+                        .attr("class", "select1")
+                        .style("margin-top", "20px");
+
+                var group_select = d3.select("body")
+                        .append("select")
+                        .attr("class", "select2")
+                        .style("margin-left", "10px");
+
+                var occupation_select = d3.select("body")
+                        .append("select")
+                        .attr('class', "select3")
+                        .style("margin-left", "10px")
+                        .style("width", "auto");
+
+                var measurment_select = d3.select("body")
+                        .append("select")
+                        .attr("class", "select4")
+                        .style("margin-left", "10px");
+
+                var button = d3.select('body')
+                        .append("button")
+                        .attr("class", "showmap")
+                        .style("margin-left", "10px")
+                        .text("show map");
+
+                year_select.selectAll("option")
+                        .data(years).enter().append("option")
+                        .text(function(d) {return d;});
+
+                group_select.selectAll("option")
+                        .data(categories).enter()
+                        .append("option").text(function(d) {return d;});
+
+                measurment_select.selectAll("option")
+                        .data(measurements).enter()
+                        .append("option").text(function(d) {return d;});
+
+                occupation_select.selectAll("option")
+                        .data(resultdata["Management Occupations"])
+                        .enter()
+                        .append("option")
+                        .text(function(d) {return d;});
+
+                year_select.on("change", onchange1);
+                group_select.on("change", onchange2);
+                occupation_select.on("change", onchange3);
+                measurment_select.on("change", onchange4);
+
+                function onchange1() {
+                    var year = d3.select('.select1').property("value");
+                    return year;
+                }
+
+                function onchange2() {
+                    var group= d3.select(".select2").property("value");
+                    occupation_select.selectAll("option").remove();
+                    occupation_select.selectAll("option")
+                            .data(resultdata[group])
+                            .enter()
+                            .append("option")
+                            .text(function(d) {return d;});
+                }
+
+                function onchange3() {
+                    var occupation = d3.select(".select3").property("value");
+                    return occupation;
+                }
+
+                function onchange4() {
+                    var measurement = d3.select(".select4").property("value");
+                    return measurement;
+                }
+
+                var w = 1000;
+                var h = 600;
+                var projection = d3.geo.albersUsa()
+                        .translate([w/2, h/2.1])
+                        .scale([1000]);
+                var path = d3.geo.path().projection(projection);
+                var svg = d3.select("body").append("svg")
+                        .attr("width", w)
+                        .attr("height", h);
+
+                var states = svg.selectAll("path")
+                        .data(json.features)
+                        .enter()
+                        .append("path")
+                        .attr("d", path)
+                        .attr("class","states")
+                        .attr("stroke", "white")
+                        .style("fill", "steelblue");
+
+
+                d3.tsv("https://s3-us-west-2.amazonaws.com/vida-public/geo/us-state-names.tsv", function(error, names) {
+                    var names_abbrev = {};
+                    for (var i=0; i< names.length; i++) {
+
+                        names_abbrev[names[i].name] = names[i].code;
+                    }
+
+                    var g = svg.append("g");
+                    g.selectAll("text")
+                            .data(json.features)
+                            .enter()
+                            .append("svg:text")
+                            .text(function(d){
+                                return names_abbrev[d.properties.name];
+                            })
+                            .attr("x", function(d){
+                                return path.centroid(d)[0];
+                            })
+                            .attr("y", function(d){
+                                return  path.centroid(d)[1];
+                            })
+                            .attr("text-anchor","middle")
+                            .attr('font-size','6pt')
+                            .attr('fill', 'black')
+                            .attr("font-weight", "bold")
+                            .attr("font-style", "bold");
+
+                    button.on("click", clickchange);
+
+                    function clickchange() {
+
+                        var year = onchange1();
+                        var job=onchange3();
+                        var measurement = onchange4();
+                        var flag = "Alabama";
+                        d3.csv("./project_data/overall.csv", function(error, csvdata){
+                            if (error) {
+                                return console.log(error);
+                            } else {
+                                var value_range = [];
+                                var salaries = {};
+                                var employments = {};
+                                var jobs_1000 = {};
+                                var plot_salary = {};
+                                var plot_employment = {};
+                                var plot_percentile = {};
+                                var chart_employment = {};
+                                var chart_salary = {};
+                                var industry_employment = [];
+                                var industry_salary = [];
+
+                                for (var i=0; i<csvdata.length;i++){
+                                    if (csvdata[i]["OCC_TITLE"] == job) {
+
+                                        var name = csvdata[i].STATE;
+                                        var salary_no = csvdata[i]["A_MEAN_"+year];
+                                        var employment_no = csvdata[i]["TOT_EMP_" + year];
+                                        var job_1000 = csvdata[i]["JOBS_1000_" + year];
+
+                                        var data_salary = [];
+                                        var data_employment = [];
+                                        var data_percentile = [];
+                                        var salaryArray = new Array;
+                                        var employmentArray = new Array;
+                                        var percentileArray = new Array;
+
+                                        for (var j = 2010; j < 2016; j++) {
+                                            salaryArray.push(+csvdata[i]["A_MEAN_" + j]);
+                                            employmentArray.push(+csvdata[i]["TOT_EMP_" + j]);
+
+                                            if (j == year) {
+                                                percentileArray.push(+csvdata[i]["A_PCT10_" + j]);
+                                                percentileArray.push(+csvdata[i]["A_PCT25_" + j]);
+                                                percentileArray.push(+csvdata[i]["A_MEDIAN_" + j]);
+                                                percentileArray.push(+csvdata[i]["A_PCT75_" + j]);
+                                                percentileArray.push(+csvdata[i]["A_PCT90_" + j]);
+                                            }
+                                        }
+
+                                        for (var a=0; a<yearArray.length; a++) {
+                                            var temp_salary = {};
+                                            var temp_employment = {};
+                                            temp_salary["x"] = yearArray[a];
+                                            temp_salary["y"] = salaryArray[a];
+                                            temp_employment["x"] = yearArray[a];
+                                            temp_employment["y"] = employmentArray[a];
+                                            data_salary.push(temp_salary);
+                                            data_employment.push(temp_employment);
+                                        }
+
+                                        for (var b=0; b<percentile.length; b++) {
+                                            var temp_percentile = {};
+                                            temp_percentile["x"] = percentile[b];
+                                            temp_percentile["y"] = percentileArray[b];
+                                            data_percentile.push(temp_percentile);
+                                        }
+
+                                        salaries[name] = salary_no;
+                                        employments[name] = employment_no;
+                                        jobs_1000[name] = job_1000;
+
+                                        plot_salary[name] = data_salary;
+                                        plot_employment[name] = data_employment;
+                                        plot_percentile[name] = data_percentile;
+
+                                        if (measurement == "salary") {
+                                            value_range.push(+salary_no);
+                                        }  else if (measurement == "employment") {
+                                            value_range.push(+employment_no);
+                                        }
+                                    }
+
+                                    if (csvdata[i].OCC_GROUP == "major") {
+                                        var state_name = csvdata[i].STATE;
+
+                                        if (state_name != flag) {
+                                            chart_employment[flag] = industry_employment;
+                                            chart_salary[flag] = industry_salary;
+                                            flag = state_name;
+                                            industry_employment = [];
+                                            industry_salary = [];
+                                        }
+                                        var employment_1 = csvdata[i]["TOT_EMP_" + year];
+                                        var salary_1 = csvdata[i]["A_MEAN_"+year];
+                                        var temp_emp = [];
+                                        var temp_sal = [];
+                                        var industry = csvdata[i].OCC_TITLE;
+                                        temp_emp.push(industry);
+                                        temp_emp.push(employment_1);
+                                        temp_sal.push(industry);
+                                        temp_sal.push(salary_1);
+                                        industry_employment.push(temp_emp);
+                                        industry_salary.push(temp_sal);
+                                    }
+                                }
+
+
+                                var maxvalue = d3.max(value_range);
+                                var minvalue = d3.min(value_range);
+
+                                var linear = d3.scale.linear()
+                                        .domain([minvalue, maxvalue])
+                                        .range([0, 1]);
+
+
+                                var a = d3.rgb(255,255,255);
+                                var b = d3.rgb(0,0,255);
+
+                                var computeColor = d3.interpolate(a,b);
+
+                                if (measurement == "salary") {
+                                    states.style("fill", function(d) {
+                                        var t = linear(salaries[d.properties.name]);
+                                        var color = computeColor(t);
+                                        return color.toString();
+                                    });
+                                } else if (measurement == "employment") {
+                                    states.style("fill", function(d) {
+                                        var t = linear(employments[d.properties.name]);
+                                        var color = computeColor(t);
+                                        return color.toString();
+
+                                    });
+                                }
+
+                                svg.select("defs").remove();
+                                svg.selectAll(".textvalue").remove();
+                                svg.select("rect").remove();
+                                var defs = svg.append("defs");
+
+                                var linearGradient = defs.append("linearGradient")
+                                        .attr("id","linearColor")
+                                        .attr("x1","0%")
+                                        .attr("y1","0%")
+                                        .attr("x2","100%")
+                                        .attr("y2","0%");
+
+                                var stop1 = linearGradient.append("stop")
+                                        .attr("offset","0%")
+                                        .style("stop-color",a.toString());
+
+                                var stop2 = linearGradient.append("stop")
+                                        .attr("offset","100%")
+                                        .style("stop-color",b.toString());
+
+                                var colorRect = svg.append("rect")
+                                        .attr("x", 35)
+                                        .attr("y", 535)
+                                        .attr("width", 140)
+                                        .attr("height", 10)
+                                        .style("fill","url(#" + linearGradient.attr("id") + ")");
+
+                                var minValueText = svg.append("text")
+                                        .attr("class","valueText")
+                                        .attr("x", 20)
+                                        .attr("y", 535)
+                                        .attr("dy", "-0.3em")
+                                        .attr("class", "textvalue")
+                                        .text(function(){
+                                            return minvalue;
+                                        });
+
+                                var maxValueText = svg.append("text")
+                                        .attr("class","valueText")
+                                        .attr("x", 150)
+                                        .attr("y", 535)
+                                        .attr("dy", "-0.3em")
+                                        .attr("class", "textvalue")
+                                        .text(function() {
+                                            return maxvalue;
+                                        });
+
+                                states.on("mouseover", function(d) {
+                                    var xPosition = path.centroid(d)[0];
+                                    var yPosition= path.centroid(d)[1];
+                                    var content = d.properties.name + "\n"+"Annual average wage: $" +
+                                            salaries[d.properties.name] + "\n"+ "Employment: " +
+                                            employments[d.properties.name] + "\n"+ "Employment per 1000: " +
+                                            jobs_1000[d.properties.name];
+
+                                    d3.select("#tooltip")
+                                            .style("left", xPosition+"px")
+                                            .style("top", yPosition+"px")
+                                            .select("#content")
+                                            .text(content)
+                                    ;
+
+                                    d3.select("#tooltip").classed("hidden", false);
+                                })
+                                        .on("mouseout", function() {
+                                            d3.select("#tooltip").classed("hidden", true);
+                                        })
+                                        .on("click", function(d) {
+                                            d3.selectAll(".lineGraph").remove();
+                                            d3.selectAll(".barChart").remove();
+                                            var salaries = plot_salary[d.properties.name];
+                                            var employments = plot_employment[d.properties.name];
+                                            var percentiles = plot_percentile[d.properties.name];
+                                            generate_year_plot(salaries);
+                                            generate_year_plot(employments);
+                                            generate_percentile(percentiles);
+
+                                            var employment_data = chart_employment[d.properties.name];
+                                            var salary_data = chart_salary[d.properties.name];
+                                            generate_barChart(chart_employment[d.properties.name], "salary ($)");
+                                            generate_barChart(chart_salary[d.properties.name], "employment");
+                                        })
+
+                            }});
+                    }
+                })
+            }
+        })
+    });
+</script>
+</body>
+</html>

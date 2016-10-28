@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script type="text/javascript"
+            src="http://d3js.org/d3.v3.min.js">
+    </script>
+    <style type="text/css">
+        path:hover{
+            fill-opacity: .7;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: sans-serif;
+            font-size: 11px;
+        }
+    </style>
+</head>
+
+<body>
+<script type="text/javascript">
+    var s = d3.select('body').append("svg")
+            .attr("width",width)
+            .attr("height","200");
+
+    var height = 120;
+    var width=200;
+
+
+    var svg=d3.select("svg"),
+            margin = {top: 20, right: 20, bottom: 30, left: 50},
+
+            height = +svg.attr("height") - margin.top - margin.bottom;
+    g =svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    //    var svg = d3.select("svg")
+    //            .attr("width", width)
+    //            .attr("height", height)
+    //            .append("g")
+    //            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+//    var data = [];
+//    var yearArray = new Array;
+//    var salaryArray = new Array;
+    var job = "Legislators";
+    var state = "Alabama";
+    var year = 2015;
+
+    d3.csv("./project_data/overall.csv", function(error, csvdata){
+        if (error) {
+            return console.log(error);
+        } else {
+            var plot_salary = {};
+            var plot_employment = {};
+            var plot_percentile = {};
+
+            var yearArray = ["2010", "2011", "2012", "2013","2014", "2015"];
+            var percentile = [10, 25, 50, 75, 90];
+            var salaryArray = new Array;
+            var employmentArray = new Array;
+            var percentileArray = new Array;
+
+            for (var i=0; i<csvdata.length; i++) {
+                var data_salary = [];
+                var data_employment = [];
+                var data_percentile = [];
+                if (csvdata[i]["OCC_TITLE"] == job) {
+                    var name = csvdata[i].STATE;
+
+                    for (var j = 2010; j < 2016; j++) {
+                        salaryArray.push(+csvdata[i]["A_MEAN_" + j]);
+                        employmentArray.push(+csvdata[i]["TOT_EMP_" + j]);
+                    }
+                    percentileArray.push(+csvdata[i]["A_PCT10_"+ year]);
+                    percentileArray.push(+csvdata[i]["A_PCT25_"+ year]);
+                    percentileArray.push(+csvdata[i]["A_MEDIAN_"+ year]);
+                    percentileArray.push(+csvdata[i]["A_PCT75_"+ year]);
+                    percentileArray.push(+csvdata[i]["A_PCT90_"+ year]);
+
+                    for (var a=0; a<yearArray.length; a++) {
+                        var temp_salary = {};
+                        var temp_employment = {};
+                        temp_salary["x"] = yearArray[a];
+                        temp_salary["y"] = salaryArray[a];
+                        temp_employment["x"] = yearArray[a];
+                        temp_employment["y"] = employmentArray[a];
+                        data_salary.push(temp_salary);
+                        data_employment.push(temp_employment);
+                    }
+
+                    for (var b=0; b<percentile.length; b++) {
+                        var temp_percentile = {};
+                        temp_percentile["x"] = percentile[b];
+                        temp_percentile["y"] = percentileArray[b];
+                        data_percentile.push(temp_percentile);
+                    }
+//                    console.log(data_salary);
+                    plot_salary[name] = data_salary;
+                    plot_employment[name] = data_employment;
+                    plot_percentile[name] = data_percentile;
+                }
+            }
+
+            var data = plot_salary[state];
+            var salary_range = data.map(function(d) {return d.y;});
+            console.log(data);
+            console.log(salary_range);
+
+            var xScale = d3.scale.ordinal()
+                    .domain(data.map(function(d){return(d.x);}))
+                    .range([0,40,80,120,160,200]);
+            console.log(d3.min(salaryArray));
+
+
+            var yScale = d3.scale.linear()
+                    .domain(d3.extent(data.map(function(d) {return d.y})))
+                    .range([height, 0]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+            var line = d3.svg.line()
+                    .x(function(d){return xScale(d.x)})
+                    .y(function(d){return yScale(d.y)});
+
+
+            g.append('g')
+                    .attr('class', 'axis')
+                    .attr('transform', 'translate(0,' + height + ')')
+                    .call(xAxis)
+//                    .attr('shape-rendering', 'crispEdges')
+                    .append('text')
+                    .text('Year')
+                    .attr('transform', 'translate(' + width + ', 0)');
+
+            g.append('g')
+                    .attr('class', 'axis')
+                    .call(yAxis)
+                    .append('text')
+                    .text('Salary');
+
+
+            g.append('path')
+                    .attr('class', 'line')
+                    .attr('d', line(data))
+                    .attr("stroke", "#f66")
+                    .attr("fill","none");
+
+            g.selectAll("circle")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {return xScale(d.x);})
+                    .attr("cy", function(d) {return yScale(d.y);})
+                    .attr("r", 2);
+
+        }
+    });
+
+
+</script>
+</body>
+</html>

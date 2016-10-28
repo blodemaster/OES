@@ -12,12 +12,14 @@
         }
         #tooltip {
             position: absolute;
-            width: 100px;
+            width: auto;
             height: auto;
             padding: 10px;
             background-color: white;
             border-radius: 10px;
             pointer-events: none;
+            border:1px solid #A5C4EC;
+
         }
 
         #tooltip.hidden {
@@ -27,7 +29,7 @@
             margin: 0;
             font-family: sans-serif;
             font-size:9px;
-            line-height: 20px;
+            line-height: 12px;
             color: black;
         }
 
@@ -54,7 +56,13 @@
 <body>
 <div id="tooltip" class="hidden">
     <p><span id="content"></span></p>
+    <p><span id="salary"></span></p>
+    <p><span id="employment"></span></p>
+    <p><span id="jobs_1000"></span></p>
 
+
+</div>
+<div style="text-align:center; font-weight: bold; font-size: 18pt">Visualization in Occupation Employment Statistic
 </div>
 
 <script type="text/javascript">
@@ -168,7 +176,6 @@
 
             var yScale = d3.scale.linear()
                     .domain([d3.min(dataset.map(function(d) {return d.y}))*0.8, d3.max(dataset.map(function(d) {return d.y}))*1.2])
-                    //                    .domain(d3.extent(dataset.map(function(d) {return d.y})))
                     .range([height, 0]);
 
             var xAxis = d3.svg.axis()
@@ -273,7 +280,6 @@
                     .data(dataset)
                     .enter()
                     .append("rect")
-                    //.attr("class","MyRect")
                     .attr("transform","translate(" + padding.left + "," + padding.top + ")")
                     .attr("x", function(d,i){
                         return xScale(names[i]) + rectPadding/2;
@@ -521,11 +527,11 @@
                                         plot_employment[name] = data_employment;
                                         plot_percentile[name] = data_percentile;
 
-                                        if (measurement == "salary") {
-                                            value_range.push(+salary_no);
-                                        }  else if (measurement == "employment") {
-                                            value_range.push(+employment_no);
-                                        }
+                                    if (measurement == "salary") {
+                                        value_range.push(+salary_no);
+                                    }  else if (measurement == "employment") {
+                                        value_range.push(+employment_no);
+                                    }
                                     }
 
                                     if (csvdata[i].OCC_GROUP == "major") {
@@ -631,17 +637,25 @@
                                 states.on("mouseover", function(d) {
                                     var xPosition = path.centroid(d)[0];
                                     var yPosition= path.centroid(d)[1];
-                                    var content = d.properties.name + "\n"+"Annual average wage: $" +
-                                            salaries[d.properties.name] + "\n"+ "Employment: " +
-                                            employments[d.properties.name] + "\n"+ "Employment per 1000: " +
-                                            jobs_1000[d.properties.name];
 
                                     d3.select("#tooltip")
                                             .style("left", xPosition+"px")
                                             .style("top", yPosition+"px")
                                             .select("#content")
-                                            .text(content)
-                                    ;
+                                            .text(d.properties.name);
+
+                                    d3.select("#tooltip")
+                                            .select("#salary")
+                                            .text("Annual mean wage: $"+salaries[d.properties.name]);
+
+                                    d3.select("#tooltip")
+                                            .select("#employment")
+                                            .text("Employment: " + employments[d.properties.name]);
+
+                                    d3.select("#tooltip")
+                                            .select("#jobs_1000")
+                                            .text("Employment per 1000: "+jobs_1000[d.properties.name]);
+
 
                                     d3.select("#tooltip").classed("hidden", false);
                                 })
@@ -662,14 +676,14 @@
                                             var salary_data = chart_salary[d.properties.name];
                                             generate_barChart(chart_employment[d.properties.name], "salary ($)");
                                             generate_barChart(chart_salary[d.properties.name], "employment");
-                                        })
+                                })
 
                             }});
                     }
                 })
             }
         })
-    });
+});
 </script>
 </body>
 </html>

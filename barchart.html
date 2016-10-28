@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>bar_chart</title>
+</head>
+
+<style>
+    .axis path,
+    .axis line{
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+    }
+
+    .axis text {
+        font-family: sans-serif;
+        font-size: 11px;
+        fill: #000000;
+    }
+
+    .MyText {
+        font-size: small;
+        fill: black;
+        text-anchor: middle;
+    }
+</style>
+
+<body>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+<script>
+
+    var width = 650;
+    var height = 300;
+
+    var padding = {left:30, right:30, top:20, bottom:20};
+
+    var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+    var svg2 = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+
+    d3.csv("2015_R.csv", function(error, csvdata){
+        if(error){
+            return console.log(error);
+        }else {
+            var fullnames = [];
+            var names = [];
+            var dataset = [];
+            var salary = [];
+            var c = 0;
+            for(var i = 0; i < csvdata.length; i++){
+                if((csvdata[i].ST == "AL") && (csvdata[i].OCC_GROUP == "major")){
+                    names[c] = capital_letter(csvdata[i].OCC_TITLE);
+                    fullnames[c] = csvdata[i].OCC_TITLE;
+                    dataset[c] = +csvdata[i].TOT_EMP;
+                    salary[c] = +csvdata[i].A_MEAN;
+                    c++;
+                }
+            }
+
+            var xScale = d3.scale.ordinal()
+                    .domain(names)
+                    .rangeRoundBands([0, width - padding.left - padding.right],0, 0);
+
+            var yScale = d3.scale.linear()
+                    .domain([0,d3.max(dataset)])
+                    .range([height - padding.top - padding.bottom, 0]);
+
+            var yScale2 = d3.scale.linear()
+                    .domain([0,d3.max(salary)])
+                    .range([height - padding.top - padding.bottom, 0]);
+
+            var xAxis = d3.svg.axis()
+                    .scale(xScale)
+                    .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient("left");
+
+            var yAxis2 = d3.svg.axis()
+                    .scale(yScale2)
+                    .orient("left");
+
+            var rectPadding = 8;
+
+            var rects = svg.selectAll("rect")
+                    .data(dataset)
+                    .enter()
+                    .append("rect")
+                    //.attr("class","MyRect")
+                    .attr("transform","translate(" + padding.left + "," + padding.top + ")")
+                    .attr("x", function(d,i){
+                        return xScale(names[i]) + rectPadding/2;
+                    } )
+                    .attr("y",function(d){
+                        return yScale(d);
+                    })
+                    .attr("width", xScale.rangeBand() - rectPadding )
+                    .attr("height", function(d){
+                        return height - padding.top - padding.bottom - yScale(d);
+                    })
+                    .attr("fill", "steelblue")
+                    .on("mouseover", function () {
+                        d3.select(this)
+                                .attr("fill", "orange");
+                    })
+                    .on("mouseout", function(){
+                        d3.select(this)
+                                .attr("fill", "steelblue");
+                    })
+                    .append("title")
+                    .text(function (d, i) {
+                        return fullnames[i] + " :  "+ d;
+                    });
+
+            svg.append("g")
+                    .attr("class","axis")
+                    .attr("transform","translate(" + padding.left + "," + (height - padding.bottom) + ")")
+                    .call(xAxis)
+
+            svg.append("g")
+                    .attr("class","axis")
+                    .attr("transform","translate(" + padding.left + "," + padding.top + ")")
+                    .call(yAxis)
+                    .append("text")
+                    .text("Employment ")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 16)
+                    .attr("dy", "1em")
+                    .attr("text-anchor", "end");
+
+            var rects2 = svg2.selectAll("rect")
+                    .data(salary)
+                    .enter()
+                    .append("rect")
+                    //.attr("class","MyRect")
+                    .attr("transform","translate(" + padding.left + "," + padding.top + ")")
+                    .attr("x", function(d,i){
+                        return xScale(names[i]) + rectPadding/2;
+                    } )
+                    .attr("y",function(d){
+                        return yScale2(d);
+                    })
+                    .attr("width", xScale.rangeBand() - rectPadding )
+                    .attr("height", function(d){
+                        return height - padding.top - padding.bottom - yScale2(d);
+                    })
+                    .attr("fill", "steelblue")
+                    .on("mouseover", function () {
+                        d3.select(this)
+                                .attr("fill", "orange");
+                    })
+                    .on("mouseout", function(){
+                        d3.select(this)
+                                .attr("fill", "steelblue");
+                    })
+                    .append("title")
+                    .text(function (d, i) {
+                        return fullnames[i] + " :  "+ d;
+                    });
+
+            svg2.append("g")
+                    .attr("class","axis")
+                    .attr("transform","translate(" + padding.left + "," + (height - padding.bottom) + ")")
+                    .call(xAxis)
+
+            svg2.append("g")
+                    .attr("class","axis")
+                    .attr("transform","translate(" + padding.left + "," + padding.top + ")")
+                    .call(yAxis2)
+                    .append("text")
+                    .text("Salary ")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 16)
+                    //.attr("dy", "1em")
+                    .attr("text-anchor", "end");
+
+
+        }
+    });
+
+    function  capital_letter(str) {
+        var array = str.split(" ");
+        var string = "";
+        array.pop();
+        for (var i = 0; i < array.length; i++){
+            if (array[i][0] == array[i][0].toUpperCase()){
+                string = string + array[i][0]
+            }
+        }
+        string = string.substr(0,3);
+
+        return string;
+    }
+
+</script>
+
+</body>
+</html>

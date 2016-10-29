@@ -164,10 +164,13 @@
         };
 
         var generate_percentile=function(dataset) {
-            if (dataset[4].y == 0) {
-                dataset.pop();
-            }
 
+            if (dataset.length == 4) {
+                if (dataset[4].y == 0) {
+                    dataset.pop();
+                }
+            }
+            
             var xScale = d3.scale.linear()
                     .domain([0,100])
                     .range([0,(width-40)]);

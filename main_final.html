@@ -62,7 +62,7 @@
 
 
 </div>
-<div style="text-align:center; font-weight: bold; font-size: 18pt">Visualization in Occupation Employment Statistic
+<div style="text-align:center; font-weight: bold; font-size: 24pt">Visualization in Occupation Employment Statistic
 </div>
 
 <script type="text/javascript">
@@ -99,15 +99,12 @@
         var width = 350 - margin.left -margin.right;
         var height = 300 - margin.top - margin.bottom;
 
-        var job = "Legislators";
         var state = "Alabama";
-        var year = 2015;
 
-        var yearArray = ["2015", "2014", "2013", "2012","2011", "2010"];
+        var yearArray = ["2010", "2011", "2012", "2013","2014", "2015"];
         var percentile = [10, 25, 50, 75, 90];
 
-
-        var generate_year_plot = function(dataset) {
+        var generate_year_plot = function(dataset, label) {
             var xScale = d3.scale.ordinal()
                     .domain(dataset.map(function(d){return(d.x);}))
                     .range([0,55,110,165,220,275]);
@@ -134,7 +131,8 @@
                     .attr("height", height+margin.top + margin.bottom)
                     .attr("class", "lineGraph")
                     .append("g")
-                    .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+                    .attr("transform","translate(" + margin.left + "," + margin.top + ")")
+                    .text("");
 
             chart.append('g')
                     .attr('class', 'axis')
@@ -148,7 +146,7 @@
                     .attr('class', 'axis')
                     .call(yAxis)
                     .append('text')
-                    .text('Salary');
+                    .text(label);
 
             chart.append('path')
                     .attr('class', 'line')
@@ -316,7 +314,7 @@
                     .append("text")
                     .text(label)
                     //                    .attr("transform", "rotate(-90)")
-                    .attr("transform", "translate(" + 40 +", -20)")
+                    .attr("transform", "translate(" + 45 +", -20)")
                     .attr("y", 16)
                     .attr("dy", "1em")
                     .attr("text-anchor", "end");
@@ -402,10 +400,12 @@
                     return measurement;
                 }
 
+                d3.select("body").append("p").text("Please select the options and click button to generate map")
+
                 var w = 1000;
-                var h = 600;
+                var h = 550;
                 var projection = d3.geo.albersUsa()
-                        .translate([w/2, h/2.1])
+                        .translate([w/2, h/2.3])
                         .scale([1000]);
                 var path = d3.geo.path().projection(projection);
                 var svg = d3.select("body").append("svg")
@@ -419,6 +419,7 @@
                         .attr("d", path)
                         .attr("class","states")
                         .attr("stroke", "white")
+                        .attr("stroke-width", "2px")
                         .style("fill", "steelblue");
 
 
@@ -663,19 +664,42 @@
                                             d3.select("#tooltip").classed("hidden", true);
                                         })
                                         .on("click", function(d) {
+
+                                            if (measurement == "salary") {
+                                                states.style("fill", function(d) {
+                                                    var t = linear(salaries[d.properties.name]);
+                                                    var color = computeColor(t);
+                                                    return color.toString();
+                                                });
+                                            } else if (measurement == "employment") {
+                                                states.style("fill", function(d) {
+                                                    var t = linear(employments[d.properties.name]);
+                                                    var color = computeColor(t);
+                                                    return color.toString();
+                                                });
+                                            }
+                                            d3.select(".tooltip").remove();
+                                            d3.select("body").append("p").text("Detailed information of " + d.properties.name)
+                                                    .style("font-size", "18px")
+                                                    .style("font-weight", "bold")
+                                                    .attr("class", "tooltip");
+
+                                            d3.select(this).style("fill", "orange");
+
+
                                             d3.selectAll(".lineGraph").remove();
                                             d3.selectAll(".barChart").remove();
-                                            var salaries = plot_salary[d.properties.name];
-                                            var employments = plot_employment[d.properties.name];
+                                            var salaries_2 = plot_salary[d.properties.name];
+                                            var employments_2 = plot_employment[d.properties.name];
                                             var percentiles = plot_percentile[d.properties.name];
-                                            generate_year_plot(salaries);
-                                            generate_year_plot(employments);
+                                            generate_year_plot(salaries_2, "Salary");
+                                            generate_year_plot(employments_2, "Employment");
                                             generate_percentile(percentiles);
 
                                             var employment_data = chart_employment[d.properties.name];
                                             var salary_data = chart_salary[d.properties.name];
-                                            generate_barChart(chart_employment[d.properties.name], "salary ($)");
-                                            generate_barChart(chart_salary[d.properties.name], "employment");
+                                            generate_barChart(chart_employment[d.properties.name], "Salary ($)");
+                                            generate_barChart(chart_salary[d.properties.name], "Employment");
                                 })
 
                             }});

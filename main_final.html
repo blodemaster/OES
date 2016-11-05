@@ -461,7 +461,9 @@
                     button.on("click", clickchange);
 
                     function clickchange() {
-
+                        d3.select(".highlight").remove();
+                        d3.selectAll(".barChart").remove();
+                        d3.selectAll(".lineGraph").remove();
                         var year = onchange1();
                         var job=onchange3();
                         var measurement = onchange4();

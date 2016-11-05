@@ -165,12 +165,11 @@
 
         var generate_percentile=function(dataset) {
 
-            if (dataset.length == 4) {
                 if (dataset[4].y == 0) {
                     dataset.pop();
                 }
-            }
-            
+
+
             var xScale = d3.scale.linear()
                     .domain([0,100])
                     .range([0,(width-40)]);
@@ -292,12 +291,18 @@
                     .attr("height", function(d){
                         return height - padding.top - padding.bottom - yScale(d);
                     })
-                    .attr("fill", "steelblue")
+                    .attr("fill", function(d, i) {
+                        if (fullnames[i] == d3.select(".select2").property("value")) {
+                            return "blue"
+                        }  else {
+                            return "steelblue"
+                        }
+                    })
                     .on("mouseover", function () {
                         d3.select(this)
                                 .attr("fill", "orange");
                     })
-                    .on("mouseout", function(){
+                    .on("mouseout", function(d, i){
                         d3.select(this)
                                 .attr("fill", "steelblue");
                     })
@@ -681,14 +686,13 @@
                                                     return color.toString();
                                                 });
                                             }
-                                            d3.select(".tooltip").remove();
+                                            d3.select(".highlight").remove();
                                             d3.select("body").append("p").text("Detailed information of " + d.properties.name)
                                                     .style("font-size", "18px")
                                                     .style("font-weight", "bold")
-                                                    .attr("class", "tooltip");
+                                                    .attr("class", "highlight");
 
                                             d3.select(this).style("fill", "orange");
-
 
                                             d3.selectAll(".lineGraph").remove();
                                             d3.selectAll(".barChart").remove();
@@ -701,8 +705,8 @@
 
                                             var employment_data = chart_employment[d.properties.name];
                                             var salary_data = chart_salary[d.properties.name];
-                                            generate_barChart(chart_employment[d.properties.name], "Salary ($)");
-                                            generate_barChart(chart_salary[d.properties.name], "Employment");
+                                            generate_barChart(chart_salary[d.properties.name], "Salary ($)");
+                                            generate_barChart(chart_employment[d.properties.name], "Employment");
                                 })
 
                             }});
